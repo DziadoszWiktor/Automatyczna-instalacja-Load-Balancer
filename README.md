@@ -5,7 +5,7 @@
 * ### host.ini
 * ### setup.yaml
 * ###  img
-    * #### db_cred.yaml
+    * #### app.JPG
 * ###  files
     * #### app.service
     * #### lb.conf
