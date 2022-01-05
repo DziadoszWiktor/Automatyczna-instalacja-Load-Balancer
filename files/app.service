@@ -1,0 +1,17 @@
+[Unit]
+Description=My {{APP_NAME}}
+After=network-online.target
+
+ 
+
+[Service]
+Type=simple
+User={{APP_NAME}}
+ExecStart=/opt/{{APP_NAME}}/.venv/bin/flask run --host 0.0.0.0 --port 8080
+WorkingDirectory=/opt/ExampleApp
+Restart=always
+
+ 
+
+[Install]
+WantedBy=multi-user.target

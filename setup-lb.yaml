@@ -1,0 +1,65 @@
+---
+- hosts: load_balancer_nodes
+  become: yes
+  vars:
+    app_ips:
+      - 172.31.4.78:8080
+      - 172.31.7.209:8080
+  tasks:
+    - name: install epel
+      yum:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: present
+    - name: install nginx
+      yum:
+        name: nginx
+        state: present
+    - name: put nginx conf
+      template:
+        src: files/lb.conf
+        dest: /etc/nginx/conf.d/blog.conf
+    - name: reload nginx
+      systemd:
+        name: nginx
+        state: reloaded
+- hosts: app_nodes
+  become: yes
+  vars:
+    APP_NAME: ExampleApp
+    #APP_REPO: https://github.com/jkanclerz/example-flask-app-1
+    APP_REPO: https://github.com/DziadoszWiktor/flask-example-app
+    #APP_REPO: https://github.com/WiktorKarnia/CeneoScraper-Python
+    APP_PORT: 8080
+  tasks:
+    - name: "install os packages"
+      yum:
+        name: python3, python3-pip, git
+    - name: "sync repo"
+      git:
+        repo: "{{ APP_REPO }}"
+        dest: "/opt/{{APP_NAME}}"
+        force: yes
+    - name: "app user"
+      user:
+        name: "{{ APP_NAME }}"
+    - name: "change permissions"
+      file:
+        owner: "{{APP_NAME}}"
+        group: "{{APP_NAME}}"
+        path: "/opt/{{APP_NAME}}"
+        recurse: yes
+    - name: "venv for python + requirements"
+      pip:
+        requirements: "/opt/{{APP_NAME}}/requirements.txt"
+        virtualenv: "/opt/{{APP_NAME}}/.venv"
+        virtualenv_command: python3 -m venv
+      become_user: "{{ APP_NAME }}"
+    - name: "register as a service"
+      template:
+        src: files/app.service
+        dest: "/etc/systemd/system/{{APP_NAME}}.service"
+    - name: "start service"
+      systemd:
+        daemon_reload: yes 
+        name: "{{ APP_NAME }}"
+        state: restarted
